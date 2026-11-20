@@ -1,5 +1,13 @@
-# Hardened Node.js Alpine image
+# Hardened Node.js Alpine image (remove npm/npx/corepack to eliminate unused CLI CVE surface)
 FROM node:22-alpine
+
+# Upgrade base OS packages and strip unused package managers from runtime image
+RUN apk upgrade --no-cache && \
+    rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx \
+           /usr/local/bin/corepack
 
 # Set working directory
 WORKDIR /app
@@ -8,15 +16,8 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy package files first for layer caching
-COPY package*.json ./
-
-# Install dependencies (production only)
-RUN npm install --omit=dev && \
-    npm cache clean --force
-
-# Copy application source
-COPY --chown=nodejs:nodejs server.js ./
+# Copy application source (zero external npm dependencies)
+COPY --chown=nodejs:nodejs package.json server.js ./
 
 # Switch to non-root user
 USER nodejs
