@@ -1,0 +1,3 @@
+=== TRIVY_CONFIG ===
+Exit code: 1
+[WinError 2] Не удается найти указанный файл

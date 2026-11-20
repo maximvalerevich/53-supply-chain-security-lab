@@ -1,0 +1,19 @@
+=== SMOKE ===
+Exit code: 0
+/healthz: {
+  "name": "supply-chain-security-lab",
+  "version": "1.0.0",
+  "timestamp": "2026-11-20T05:29:25.451Z",
+  "status": "healthy",
+  "message": "Supply Chain Security Lab is healthy"
+}
+/: {
+  "name": "supply-chain-security-lab",
+  "version": "1.0.0",
+  "timestamp": "2026-11-20T05:29:25.471Z",
+  "path": "/",
+  "endpoints": [
+    "/healthz",
+    "/"
+  ]
+}
