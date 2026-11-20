@@ -1,0 +1,9 @@
+# Trivy Configuration Ignore Rules
+# Format: <target>:<severity>:<rule>:<message>
+
+# Example entries (uncomment and customize as needed):
+# Dockerfile:CRITICAL:CA-001:Avoid using latest tags
+# package.json:MEDIUM:CVE-2023-XXXX:Description of vulnerability
+
+# Note: This file should be maintained and reviewed regularly
+# as part of the supply chain security process.

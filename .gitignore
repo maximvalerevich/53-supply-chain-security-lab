@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Secrets and sensitive files
+.env
+cosign.key
+*.key
+*.pem
+
+# Temporary files
+tmp/
+sbom.spdx.json

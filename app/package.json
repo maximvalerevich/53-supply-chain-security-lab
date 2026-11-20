@@ -1,0 +1,11 @@
+{
+  "name": "supply-chain-security-lab",
+  "version": "1.0.0",
+  "description": "Supply Chain Security Lab - DevSecOps demonstration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["supply-chain", "devsecops", "security"],
+  "license": "MIT"
+}

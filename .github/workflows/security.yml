@@ -1,0 +1,89 @@
+# Security Workflow - Supply Chain Security Lab
+# This workflow runs security scans and signs the container image
+
+name: Security Scans & Supply Chain Integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  security-events: write
+
+jobs:
+  security-scan:
+    name: Security Scans
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bb0545dad42c1f79489a19b004f22bc
+
+      - name: Build Docker image
+        run: docker build -t supply-chain-security-lab:latest -t supply-chain-security-lab:${{ github.sha }} -f app/Dockerfile app
+
+      - name: Run Trivy vulnerability scanner (filesystem)
+        uses: aquasecurity/trivy-action@f2b4e15a0bea00f351b5d30720b8105811a46a98
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner (image)
+        uses: aquasecurity/trivy-action@f2b4e15a0bea00f351b5d30720b8105811a46a98
+        with:
+          image-ref: 'supply-chain-security-lab:latest'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@19b726a76a2e28f5a6fe202b5a977d51c64994a0
+        with:
+          path: .
+          format: spdx-json
+          output-file: evidence/sbom.spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@ea1693e15ed253f89d5f81d1e4422342e5e7243d
+        with:
+          name: sbom-spdx
+          path: evidence/sbom.spdx.json
+          retention-days: 30
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@9780b0c442fbb1114339c4626e98e47d04960da7
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image to GHCR
+        run: |
+          docker tag supply-chain-security-lab:latest ghcr.io/${{ github.repository }}/supply-chain-security-lab:latest
+          docker tag supply-chain-security-lab:latest ghcr.io/${{ github.repository }}/supply-chain-security-lab:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository }}/supply-chain-security-lab:latest
+          docker push ghcr.io/${{ github.repository }}/supply-chain-security-lab:${{ github.sha }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@e1523de7571e218ec8e1308058dd68f7e6b455be
+        with:
+          cosign-release: 'v2'
+
+      - name: Sign container image
+        run: |
+          cosign sign --yes ghcr.io/${{ github.repository }}/supply-chain-security-lab:${{ github.sha }}
+          cosign sign --yes ghcr.io/${{ github.repository }}/supply-chain-security-lab:latest
+
+      - name: Verify container image signature
+        run: |
+          echo "Verifying image signature..."
+          cosign verify ghcr.io/${{ github.repository }}/supply-chain-security-lab:${{ github.sha }} \
+            --certificate-identity-regexp "https://github.com/${{ github.repository }}/*" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" || exit 1
+          echo "Image signature verified successfully!"
